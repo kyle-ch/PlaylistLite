@@ -6,9 +6,8 @@ const SCOPE = 'user-library-modify user-library-read playlist-modify-public play
 class PlaylistLite extends Component {
   constructor(props) {
     super(props);
-    console.log(this.getHashParams());
     this.state = this.getHashParams();
-    this.setState({numTracks : 50})
+    this.state.numTracks = 50;
   }
 
   getHashParams() {
@@ -50,7 +49,6 @@ class PlaylistLite extends Component {
       )
       .then((json) => {
         this.setState({playlists: json.items});
-        console.log(json.items[4]);
       })
       .catch((e) => {
         console.log(e);
@@ -87,7 +85,6 @@ class PlaylistLite extends Component {
   async composePlaylist(playlist, tracks) {
     var liteVersion = this.liteVersion(playlist);
     if (!liteVersion) {
-      console.log("DOES NOT EXIST")
       liteVersion = await this.makeNewPlaylist(playlist, tracks);
     }
     fetch(liteVersion.href + "/tracks", {
@@ -109,7 +106,6 @@ class PlaylistLite extends Component {
       }
     )
     .then((json) => {
-      console.log(json)
       return json;
     }).then(
       this.fetchPlaylists()
@@ -140,7 +136,6 @@ class PlaylistLite extends Component {
       }
     )
     .then((json) => {
-      console.log(json)
       return json;
     })
     .catch((e) => {
@@ -150,8 +145,7 @@ class PlaylistLite extends Component {
   }
 
   liteVersion(playlist) {
-    var matches = this.state.playlists.filter((pl) => pl.name === (playlist.name + ' Lite'))
-    console.log(matches)
+    var matches = this.state.playlists.filter((pl) => pl.name === (playlist.name + ' Lite'));
     if (matches.length > 0) {
       return matches[0];
     }
@@ -161,7 +155,6 @@ class PlaylistLite extends Component {
   }
 
   async lighten(playlist) {
-    console.log("playlist is", playlist);
     var tracks = [];
     let newTracks = await this.fetchTracks(playlist.tracks.href);
     tracks = tracks.concat(newTracks.items);
@@ -170,10 +163,7 @@ class PlaylistLite extends Component {
       tracks = tracks.concat(newTracks.items);
     }
     tracks = this.getRandom(tracks, this.state.numTracks);
-    console.log(tracks.map((track) => track.track.uri))
     this.composePlaylist(playlist, tracks.map((track) => track.track.uri));
-
-    console.log(tracks.map((track) => track.track));
   }
 
   // from https://stackoverflow.com/a/19270021
@@ -183,7 +173,8 @@ class PlaylistLite extends Component {
         len = arr.length,
         taken = new Array(len);
     if (numTracks > len)
-        throw new RangeError("getRandom: more elements taken than available");
+        numTracks = Math.floor(len/2);
+        result = new Array(numTracks);
     while (numTracks--) {
         var x = Math.floor(Math.random() * len);
         result[numTracks] = arr[x in taken ? taken[x] : x];
@@ -195,9 +186,13 @@ class PlaylistLite extends Component {
 
   render() {
     let loginURL = 'https://accounts.spotify.com/authorize?client_id='+ process.env.REACT_APP_PLAYLIST_LITE_CLIENT_ID +'&response_type=token&scope=' + SCOPE + '&redirect_uri=' + window.location.href
-    var logIn = (<a href={loginURL}>
-      Login
-    </a>)
+    var logIn = (
+      <div>
+        <a href={loginURL}>
+          Login
+        </a>
+        <p> with your Spotify account </p>
+      </div>)
     var playlists = this.state.playlists ? (
       <table className="table">
         <tbody>
@@ -209,8 +204,8 @@ class PlaylistLite extends Component {
           {this.state.playlists.map((playlist) => {
             return (
               <tr key={playlist.id}>
-                <td>{playlist.name}</td>
                 <td><img src={playlist.images[0] ? playlist.images[0].url : null} alt={playlist.name} height='64'/> </td>
+                <td>{playlist.name}</td>
                 <td>{playlist.tracks.total}</td>
                 <td><button onClick={this.lighten.bind(this, playlist)} disabled={this.state.numTracks >= playlist.tracks.total}>Lighten</button></td>
               </tr>

@@ -8,7 +8,10 @@ class App extends Component {
     return (
       <div>
         <div className="FlexContainer">
-          <h1 className="Title">Playlist LITE </h1>
+          <div className="Title">
+            <h1 className="Title">Playlist LITE </h1>
+            <p>Made by <a href='http://kylechan.me'>Kyle Chan</a></p>
+          </div>
           <PlaylistLite className="PlaylistLite"/>
         </div>
       </div>
