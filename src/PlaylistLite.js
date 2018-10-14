@@ -1,0 +1,243 @@
+import React, { Component } from 'react';
+import './App.css';
+
+const SCOPE = 'user-library-modify user-library-read playlist-modify-public playlist-modify-private'
+
+class PlaylistLite extends Component {
+  constructor(props) {
+    super(props);
+    console.log(this.getHashParams());
+    this.state = this.getHashParams();
+    this.setState({numTracks : 50})
+  }
+
+  getHashParams() {
+    var hashParams = {};
+    var e, r = /([^&;=]+)=?([^&;]*)/g,
+       q = window.location.hash.substring(1);
+    e = r.exec(q)
+    while (e) {
+      hashParams[e[1]] = decodeURIComponent(e[2]);
+      e = r.exec(q);
+    }
+    return hashParams;
+   }
+
+   clearToken() {
+     this.setState({access_token: null});
+   }
+
+  componentDidMount() {
+    this.fetchPlaylists();
+  }
+
+  fetchPlaylists() {
+    if (this.state.access_token) {
+      fetch("https://api.spotify.com/v1/me/playlists", {
+        method:"GET",
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + this.state.access_token
+        }
+      })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response.json();
+        }
+      )
+      .then((json) => {
+        this.setState({playlists: json.items});
+        console.log(json.items[4]);
+      })
+      .catch((e) => {
+        console.log(e);
+        this.clearToken();
+      });
+    }
+  }
+
+  fetchTracks(url) {
+    return fetch(url, {
+      method:"GET",
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + this.state.access_token
+      }
+    })
+    .then((response) => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response.json();
+      }
+    )
+    .then((json) => {
+      return json;
+    })
+    .catch((e) => {
+      console.log(e);
+      this.clearToken();
+    });
+  }
+
+  async composePlaylist(playlist, tracks) {
+    var liteVersion = this.liteVersion(playlist);
+    if (!liteVersion) {
+      console.log("DOES NOT EXIST")
+      liteVersion = await this.makeNewPlaylist(playlist, tracks);
+    }
+    fetch(liteVersion.href + "/tracks", {
+      method: "PUT",
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + this.state.access_token
+      },
+      body: JSON.stringify({
+        uris: tracks
+      })
+    })
+    .then((response) => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response.json();
+      }
+    )
+    .then((json) => {
+      console.log(json)
+      return json;
+    }).then(
+      this.fetchPlaylists()
+    )
+    .catch((e) => {
+      console.log(e);
+    });
+  }
+
+  makeNewPlaylist(playlist, tracks) {
+    return fetch("https://api.spotify.com/v1/users/" + playlist.owner.id + "/playlists", {
+      method: "POST",
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + this.state.access_token
+      },
+      body: JSON.stringify({
+        name: playlist.name + " Lite",
+        description: playlist.title + " Lite'nd by PlaylistLite\n"
+      })
+    })
+    .then((response) => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response.json();
+      }
+    )
+    .then((json) => {
+      console.log(json)
+      return json;
+    })
+    .catch((e) => {
+      console.log(e);
+      this.clearToken();
+    });
+  }
+
+  liteVersion(playlist) {
+    var matches = this.state.playlists.filter((pl) => pl.name === (playlist.name + ' Lite'))
+    console.log(matches)
+    if (matches.length > 0) {
+      return matches[0];
+    }
+    else {
+      return null;
+    }
+  }
+
+  async lighten(playlist) {
+    console.log("playlist is", playlist);
+    var tracks = [];
+    let newTracks = await this.fetchTracks(playlist.tracks.href);
+    tracks = tracks.concat(newTracks.items);
+    while (newTracks.next) {
+      newTracks = await this.fetchTracks(newTracks.next);
+      tracks = tracks.concat(newTracks.items);
+    }
+    tracks = this.getRandom(tracks, this.state.numTracks);
+    console.log(tracks.map((track) => track.track.uri))
+    this.composePlaylist(playlist, tracks.map((track) => track.track.uri));
+
+    console.log(tracks.map((track) => track.track));
+  }
+
+  // from https://stackoverflow.com/a/19270021
+  getRandom(arr, n) {
+    var numTracks =  n ? n : 50;
+    var result = new Array(numTracks),
+        len = arr.length,
+        taken = new Array(len);
+    if (numTracks > len)
+        throw new RangeError("getRandom: more elements taken than available");
+    while (numTracks--) {
+        var x = Math.floor(Math.random() * len);
+        result[numTracks] = arr[x in taken ? taken[x] : x];
+        taken[x] = --len in taken ? taken[len] : len;
+    }
+    return result;
+  }
+
+
+  render() {
+    let loginURL = 'https://accounts.spotify.com/authorize?client_id='+ process.env.REACT_APP_PLAYLIST_LITE_CLIENT_ID +'&response_type=token&scope=' + SCOPE + '&redirect_uri=' + window.location.href
+    var logIn = (<a href={loginURL}>
+      Login
+    </a>)
+    var playlists = this.state.playlists ? (
+      <table className="table">
+        <tbody>
+          <tr>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Number of tracks</th>
+          </tr>
+          {this.state.playlists.map((playlist) => {
+            return (
+              <tr key={playlist.id}>
+                <td>{playlist.name}</td>
+                <td><img src={playlist.images[0] ? playlist.images[0].url : null} alt={playlist.name} height='64'/> </td>
+                <td>{playlist.tracks.total}</td>
+                <td><button onClick={this.lighten.bind(this, playlist)} disabled={this.state.numTracks >= playlist.tracks.total}>Lighten</button></td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>) : null;
+
+     var input = (
+       <div className="input-field">
+         <p> How many tracks? <input type="number" onChange={(e) => this.setState({numTracks : e.target.value})}/></p>
+       </div>
+     )
+
+      var content = this.state.access_token ? (
+        <div className="PlaylistLite">
+          {input}
+          {playlists}
+        </div>
+      ) : (
+        <div className="PlaylistLite">
+          {logIn}
+        </div>
+      )
+
+    return content;
+  }
+}
+
+export default PlaylistLite;
