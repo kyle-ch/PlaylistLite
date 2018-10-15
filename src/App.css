@@ -8,16 +8,17 @@
 .FlexContainer {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   text-align: center;
   height: 100%;
   width: 100%;
   flex-wrap: wrap;
 }
 
-.Title {
-  align-self: center;
+.title-box{
   flex: 1;
+  padding: 5px;
+  margin: 5px;
 }
 
 .PlaylistLite {

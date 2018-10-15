@@ -192,37 +192,39 @@ class PlaylistLite extends Component {
           Login
         </a>
         <p> with your Spotify account </p>
-      </div>)
+      </div>);
+    var input = (
+      <div>
+        <input className="input input-field" type="number" placeholder="Number of tracks" onChange={(e) => this.setState({numTracks : e.target.value})}/>
+      </div>
+    );
     var playlists = this.state.playlists ? (
-      <table className="table">
+      <table className="table is-hoverable">
         <tbody>
+          <thead>
+          {input}
+          </thead>
           <tr>
             <th>Image</th>
             <th>Name</th>
             <th>Number of tracks</th>
+            <th> </th>
           </tr>
           {this.state.playlists.map((playlist) => {
             return (
               <tr key={playlist.id}>
-                <td><img src={playlist.images[0] ? playlist.images[0].url : null} alt={playlist.name} height='64'/> </td>
+                <td><figure className="image is-64x64"><img src={playlist.images[0] ? playlist.images[0].url : null} alt={playlist.name} height='64'/></figure></td>
                 <td>{playlist.name}</td>
                 <td>{playlist.tracks.total}</td>
-                <td><button onClick={this.lighten.bind(this, playlist)} disabled={this.state.numTracks >= playlist.tracks.total}>Lighten</button></td>
+                <td><button className="button" onClick={this.lighten.bind(this, playlist)} disabled={this.state.numTracks >= playlist.tracks.total}>Lighten</button></td>
               </tr>
             )
           })}
         </tbody>
       </table>) : null;
 
-     var input = (
-       <div className="input-field">
-         <p> How many tracks? <input type="number" onChange={(e) => this.setState({numTracks : e.target.value})}/></p>
-       </div>
-     )
-
       var content = this.state.access_token ? (
         <div className="PlaylistLite">
-          {input}
           {playlists}
         </div>
       ) : (
