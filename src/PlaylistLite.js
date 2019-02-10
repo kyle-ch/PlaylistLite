@@ -216,7 +216,7 @@ class PlaylistLite extends Component {
                 <td><figure className="image is-64x64"><img src={playlist.images[0] ? playlist.images[0].url : null} alt={playlist.name} height='64'/></figure></td>
                 <td>{playlist.name}</td>
                 <td>{playlist.tracks.total}</td>
-                <td><button className="button" onClick={this.lighten.bind(this, playlist)} disabled={this.state.numTracks >= playlist.tracks.total}>Lighten</button></td>
+                <td><button className="button" onClick={this.lighten.bind(this, playlist)} disabled={this.state.numTracks >= playlist.tracks.total}>LITE</button></td>
               </tr>
             )
           })}

@@ -1,7 +1,7 @@
 body {
-  background-color: #7befb2;
   margin: 0;
   padding: 0;
+  overflow: scroll;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
     "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
@@ -10,8 +10,15 @@ body {
 }
 
 html, body {
+  background-color: #e3f2fd;
   width: 100%;
   height: 100%;
+}
+
+.table {
+  display: block;
+  border-radius: 2%;
+  background-color: #c8e6c9;
 }
 
 code {
