@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import './App.css';
-import PlaylistLite from './PlaylistLite'
+import PlaylistLite from './playlistLite/PlaylistLite'
 import Description from './Description'
 
 class App extends Component {
